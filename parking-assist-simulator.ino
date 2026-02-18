@@ -2,15 +2,19 @@
 #include "MedianFilter.h"
 #include "Controller.h"
 #include "Outputs.h"
+#include "Buzzer.h"
 
 // ==== Pin assignments ====
 static constexpr uint8_t PIN_TRIG = 9;
 static constexpr uint8_t PIN_ECHO = 10;
 
-// LEDs (you wired these)
+// LEDs
 static constexpr uint8_t PIN_LED_GREEN  = 3;
 static constexpr uint8_t PIN_LED_YELLOW = 5;
 static constexpr uint8_t PIN_LED_RED    = 6;
+
+// Buzzer
+static constexpr uint8_t PIN_BUZZER = 11;
 
 // ==== Timing ====
 static constexpr uint32_t SENSOR_PERIOD_MS = 50;   // 20 Hz sampling
@@ -32,6 +36,7 @@ ParkAssistController controller(
 );
 
 LedOutputs leds(PIN_LED_GREEN, PIN_LED_YELLOW, PIN_LED_RED);
+Buzzer buzzer(PIN_BUZZER);
 
 // ==== Scheduling ====
 uint32_t lastSensorMs = 0;
@@ -43,13 +48,22 @@ void setup() {
   sensor.begin();
   leds.begin();
 
-  Serial.println("Parking Assist Simulator: Milestone 2 (LED zones + filtering + FSM)");
+  Serial.println("Parking Assist Simulator: Milestone 3 (Buzzer cadence + non-blocking)");
 }
 
 void loop() {
   const uint32_t now = millis();
 
-  // Sample sensor on a fixed schedule (non-blocking)
+  // Always let buzzer run (non-blocking state machine)
+  // We'll feed it the latest filtered distance (or -1 if none yet)
+  buzzer.update(
+    now,
+    controller.state(),
+    distFilter.currentOr(-1),
+    distFilter.hasCurrent() && controller.state() != AssistState::INVALID
+  );
+
+  // Sample sensor
   if (now - lastSensorMs >= SENSOR_PERIOD_MS) {
     lastSensorMs = now;
 
@@ -64,7 +78,7 @@ void loop() {
     leds.apply(controller.state());
   }
 
-  // Periodic logging
+  // Logging
   if (now - lastLogMs >= LOG_PERIOD_MS) {
     lastLogMs = now;
 
