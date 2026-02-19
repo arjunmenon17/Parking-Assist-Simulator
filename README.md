@@ -65,12 +65,40 @@ Division by 2 accounts for round-trip travel.
 Structured like a real embedded project:
 
 Parking-Assist-Simulator/
+
 ├── Ultrasonic.h
+
 ├── MedianFilter.h
+
 ├── Controller.h / .cpp
+
 ├── Outputs.h / .cpp
+
 ├── Buzzer.h
+
 └── Parking-Assist-Simulator.ino
+
+## 🧩 Architecture Diagram
+
+```mermaid
+flowchart TD
+  subgraph Scheduler["Main Loop (cooperative scheduler via millis())"]
+    T1["Sensor task @ 20 Hz"]
+    T2["Logging task @ 5 Hz"]
+    T3["Buzzer task (runs every loop)"]
+  end
+
+  T1 --> U["UltrasonicSensor::readDistanceCm()"]
+  U -->|DistanceReading| F["MedianFilter5::push()"]
+  F -->|filtered_cm| C["ParkAssistController::update(filtered_cm, valid)"]
+  C -->|AssistState| L["LedOutputs::apply(state)"]
+
+  T3 --> BZ["Buzzer::update(now, state, filtered_cm, valid)"]
+
+  T2 --> S["Serial.print(state, filtered_cm)"]
+
+  C -->|state| BZ
+  F -->|filtered_cm| BZ
 
 
 ### Key Components
