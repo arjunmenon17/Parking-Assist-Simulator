@@ -9,7 +9,7 @@ The goal was to move beyond “Arduino demo code” and design this like product
 - Non-blocking architecture
 - Distance-based audio feedback
 
-https://youtu.be/oo_XnNc57rU
+Link to Project Demo: https://youtu.be/oo_XnNc57rU
 ---
 
 ## 🎯 Motivation
